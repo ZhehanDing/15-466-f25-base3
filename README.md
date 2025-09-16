@@ -1,8 +1,8 @@
-# (TODO: your game's title)
+# Jump to Top
 
-Author: (TODO: your name)
+Author: Alex Ding
 
-Design: (TODO: In two sentences or fewer, describe what is new and interesting about your game.)
+Design: You fall to the bottom of valley, try to jump up to the red door
 
 Screen Shot:
 
@@ -10,6 +10,6 @@ Screen Shot:
 
 How To Play:
 
-(TODO: describe the controls and (if needed) goals/strategy.)
+AD to move, hold SPACE to Charge, release SPACE to Jump
 
 This game was built with [NEST](NEST.md).

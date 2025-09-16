@@ -82,7 +82,7 @@ PlayMode::PlayMode() : scene(*jumpingland_scene) {
             }
         }
     }
-    bgm_loop=Sound::loop(*BGM_sample, 1.0f,1.0f);
+    bgm_loop=Sound::loop(*BGM_sample, 1.0f,0.0f);
 }
 
 
