@@ -40,6 +40,10 @@ struct PlayMode : Mode {
 	Scene::Transform *lower_leg = nullptr;
 	Scene::Transform *win_block = nullptr;
 	bool game_won = false;
+	//Jump scare end
+	bool jumpscare_active = false;
+	bool jumpscare_sound= false;
+	float jumpscare_timer = 0.0f;
 	glm::quat hip_base_rotation;
 	glm::quat upper_leg_base_rotation;
 	glm::quat lower_leg_base_rotation;
@@ -73,6 +77,7 @@ struct PlayMode : Mode {
 	std::shared_ptr< Sound::PlayingSample > bgm_loop;
 	std::shared_ptr< Sound::PlayingSample > start_trace;
 	std::shared_ptr< Sound::PlayingSample > close_trace;
+	std::shared_ptr< Sound::PlayingSample > jump_scare;
 	
 	//camera:
 	Scene::Camera *camera = nullptr;

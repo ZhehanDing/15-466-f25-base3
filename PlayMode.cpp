@@ -65,6 +65,10 @@ Load< Sound::Sample > close_trace_sample(LoadTagDefault, []() -> Sound::Sample c
 	return new Sound::Sample(data_path("close_trace.wav"));
 });
 
+Load< Sound::Sample > jump_scare_sample(LoadTagDefault, []() -> Sound::Sample const * {
+	return new Sound::Sample(data_path("jumpscare.wav"));
+});
+
 
 
 // ----- PlayMode Implementation -----
@@ -167,12 +171,28 @@ void PlayMode::update(float elapsed) {
 
     return; // freeze game
     }
-        if (game_over) {
+    if (game_over) {
     // Stop all movement
     velocity = glm::vec3(0.0f);
     left_pressed = right_pressed = charging_jump = false;
     if (close_trace) close_trace->stop();
     if (start_trace) start_trace->stop();
+    if (!jumpscare_sound){
+        jump_scare = Sound::play(*jump_scare_sample, 1.0f, 0.0f);
+        jumpscare_sound= true;
+    }
+    if (jumpscare_active && camera && ghost) {
+    // Place ghost right in front of the camera
+    ghost->position.x = camera->transform->position.x;
+    ghost->position.z = camera->transform->position.z-3.0f;
+
+    ghost->scale = glm::vec3(3.0f); 
+    ghost->position.y = camera->transform->position.y + 12.0f;
+    jumpscare_timer -= elapsed;
+    if (jumpscare_timer <= 0.0f) {
+            jumpscare_active = false;
+        }
+    }
 
     return; // freeze game
     }
@@ -272,6 +292,8 @@ void PlayMode::update(float elapsed) {
         if (dist_xz < 0.5f) {  
         game_over = true;
         ghost_tracing = false;
+        jumpscare_active = true;
+        jumpscare_timer = 1.0f;
     }
     }
 

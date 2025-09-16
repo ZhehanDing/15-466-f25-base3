@@ -2,7 +2,7 @@
 
 Author: Alex Ding
 
-Design: You fall to the bottom of valley, try to jump up to the red door
+Design: You fall to the bottom of valley, try to jump up to the red door, beware for the jump scare
 
 Screen Shot:
 
