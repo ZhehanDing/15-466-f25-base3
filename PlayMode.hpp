@@ -29,6 +29,11 @@ struct PlayMode : Mode {
 	//local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
 	Scene::Transform *head = nullptr;
+	Scene::Transform *ghost = nullptr;
+	bool ghost_tracing = false;
+	bool close_tracing = false;
+	bool long_tracing = true;
+	float ghost_speed = 1.0f; // units per second
 	//hexapod leg to wobble:
 	Scene::Transform *hip = nullptr;
 	Scene::Transform *upper_leg = nullptr;
@@ -43,6 +48,7 @@ struct PlayMode : Mode {
 	bool left_pressed = false;
 	bool right_pressed = false;
 	bool jump_pressed = false;
+	bool game_over = false;
 
 	glm::vec3 velocity = glm::vec3(0.0f); 
 	bool on_ground = true;
@@ -60,10 +66,13 @@ struct PlayMode : Mode {
 	std::shared_ptr< Sound::PlayingSample > charge_sound;
 	//block add
 	std::vector<Scene::Transform*> blocks;
+
 	//car honk sound:
 	std::shared_ptr< Sound::PlayingSample > jump_sound;
 	std::shared_ptr< Sound::PlayingSample > land_sound;
 	std::shared_ptr< Sound::PlayingSample > bgm_loop;
+	std::shared_ptr< Sound::PlayingSample > start_trace;
+	std::shared_ptr< Sound::PlayingSample > close_trace;
 	
 	//camera:
 	Scene::Camera *camera = nullptr;

@@ -53,10 +53,18 @@ Load< Sound::Sample > landsound_sample(LoadTagDefault, []() -> Sound::Sample con
 	return new Sound::Sample(data_path("landsound.wav"));
 });
 
-
 Load< Sound::Sample > jumpsound_sample(LoadTagDefault, []() -> Sound::Sample const * {
 	return new Sound::Sample(data_path("jumpsound.wav"));
 });
+
+Load< Sound::Sample > start_trace_sample(LoadTagDefault, []() -> Sound::Sample const * {
+	return new Sound::Sample(data_path("start_trace.wav"));
+});
+
+Load< Sound::Sample > close_trace_sample(LoadTagDefault, []() -> Sound::Sample const * {
+	return new Sound::Sample(data_path("close_trace.wav"));
+});
+
 
 
 // ----- PlayMode Implementation -----
@@ -68,6 +76,13 @@ PlayMode::PlayMode() : scene(*jumpingland_scene) {
     for (auto &t : scene.transforms) {
         if (t.name == "Head") {
             head = &t;
+            break;
+        }
+        
+    }
+    for (auto &t : scene.transforms) {
+        if (t.name == "Ghost.001") {
+            ghost = &t;
             break;
         }
         
@@ -147,9 +162,21 @@ void PlayMode::update(float elapsed) {
     // Stop all movement
     velocity = glm::vec3(0.0f);
     left_pressed = right_pressed = charging_jump = false;
+    if (close_trace) close_trace->stop();
+    if (start_trace) start_trace->stop();
 
     return; // freeze game
     }
+        if (game_over) {
+    // Stop all movement
+    velocity = glm::vec3(0.0f);
+    left_pressed = right_pressed = charging_jump = false;
+    if (close_trace) close_trace->stop();
+    if (start_trace) start_trace->stop();
+
+    return; // freeze game
+    }
+
     if (!head) return;
 
     // horizontal movement:
@@ -202,10 +229,51 @@ void PlayMode::update(float elapsed) {
         land_sound = Sound::play(*landsound_sample, 1.0f, 0.0f);
     }
 
+
     // Update last frame state
     was_on_ground = on_ground;
 }
+    // Check trigger condition
+    if (head && ghost && !ghost_tracing && head->position.z >= 15.0f) {
+        // Rotate ghost 180 degrees on Z
+        ghost->rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f)) * ghost->rotation;
+        
+        // Start tracing
+        ghost_tracing = true;
 
+        // Optional: play sound when trace starts
+        if (bgm_loop) bgm_loop->stop();
+        start_trace = Sound::loop(*start_trace_sample, 1.0f, 0.0f);
+    }
+        if (ghost_tracing && ghost && head) {
+            glm::vec2 direction_xz = glm::vec2(
+            head->position.x - ghost->position.x,
+            head->position.z - ghost->position.z
+        );
+        float dist_xz = glm::length(direction_xz);
+        if (dist_xz > 0.1f) {
+        glm::vec2 dir_norm = glm::normalize(direction_xz);
+        ghost->position.x += dir_norm.x * ghost_speed * elapsed;
+        ghost->position.z += dir_norm.y * ghost_speed * elapsed;
+        }
+        if (dist_xz < 5.0f && !close_tracing ){
+            long_tracing=false;
+            close_tracing = true;
+            if (start_trace) start_trace->stop();
+            close_trace= Sound::loop(*close_trace_sample, 1.0f, 0.0f);
+            
+        }
+        if (dist_xz > 5.0f && !long_tracing && close_tracing){
+            close_tracing = false;
+            long_tracing=true;
+            if (close_trace) close_trace->stop();
+            start_trace= Sound::loop(*start_trace_sample, 1.0f, 0.0f);
+        }
+        if (dist_xz < 0.5f) {  
+        game_over = true;
+        ghost_tracing = false;
+    }
+    }
 
     // simple ground check:
     if (head->position.z <= 1.2f) {
@@ -274,8 +342,9 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
 	}
     // game end 
+    // GPT Debug
     if (game_won) {
-    constexpr float H = 0.15f; // bigger size than instructions
+    constexpr float H = 0.15f; 
     float aspect = float(drawable_size.x) / float(drawable_size.y);
 
     DrawLines lines(glm::mat4(
@@ -285,21 +354,43 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
         0.0f, 0.0f, 0.0f, 1.0f
     ));
 
-    // measure width: "YOU WIN" has 7 chars
     float text_width = 7.0f * H;
 
-    // center horizontally at x = -text_width/2, y = 0
     glm::vec3 pos(-0.5f * text_width, 0.0f, 0.0f);
 
-    // black shadow
     lines.draw_text("YOU WIN",
         pos,
         glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
         glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 
-    // white foreground
     float ofs = 2.0f / drawable_size.y;
     lines.draw_text("YOU WIN",
+        pos + glm::vec3(ofs, ofs, 0.0f),
+        glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+        glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+}
+    if (game_over) {
+    constexpr float H = 0.15f;
+    float aspect = float(drawable_size.x) / float(drawable_size.y);
+
+    DrawLines lines(glm::mat4(
+        1.0f / aspect, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f
+    ));
+
+    float text_width = 9.0f * H; 
+
+    glm::vec3 pos(-0.5f * text_width, 0.0f, 0.0f);
+
+    lines.draw_text("GAME OVER",
+        pos,
+        glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+        glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+
+    float ofs = 2.0f / drawable_size.y;
+    lines.draw_text("GAME OVER",
         pos + glm::vec3(ofs, ofs, 0.0f),
         glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
         glm::u8vec4(0xff, 0xff, 0xff, 0x00));
